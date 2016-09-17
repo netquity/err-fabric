@@ -1,0 +1,14 @@
+[Core]
+module = fabric
+name = fabric
+
+[Documentation]
+description = Execute commands in Fabric's fabfile
+
+[Python]
+version = 3
+
+[Errbot]
+min = 4.3.0
+max = 4.3.3
+
