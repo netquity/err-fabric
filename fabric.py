@@ -1,9 +1,11 @@
 import argparse
+import io
 import logging
 import os
 import subprocess
 import sys
 
+import json
 from errbot import BotPlugin, botcmd, arg_botcmd, utils
 
 FABFILE_PATH = os.getenv('FABFILE_PATH')
@@ -67,44 +69,35 @@ class Fabric(BotPlugin):
                 tasks,
             )
         except OSError as exc:
-            exc_message = 'Bad file path: either the Python2 or Fabric binary, or fabfile itself'
+            exc_message = 'Bad file path: either the Python2 or Fabric binary, or fabfile itself.'
             exc_tuple = sys.exc_info()
         except ValueError as exc:
-            exc_message = 'A bad argument was provided to Popen'
+            exc_message = 'A bad argument was provided to Popen.'
             exc_tuple = sys.exc_info()
         except subprocess.TimeoutExpired as exc:
-            exc_message = 'The task was unable to finish before the set timeout expired'
+            exc_message = 'The task was unable to finish before the set timeout expired.'
             exc_tuple = sys.exc_info()
         except subprocess.CalledProcessError as exc:
             # FIXME: this is problematic because it doesn't state which task, and some of them may have succeeded
-            exc_message = 'The task exited with a non-zero exit code; unable to complete'
+            exc_message = 'The task exited with a non-zero exit code; unable to complete.'
             exc_tuple = sys.exc_info()
         except subprocess.SubprocessError as exc:
-            exc_message = 'An ambiguous error occurred while calling Subprocess'
+            exc_message = 'An ambiguous error occurred while calling Subprocess.'
             exc_tuple = sys.exc_info()
         else:
             try:
-                if len(completed_process.stdout) <= MAX_LENGTH_MESSAGE:
-                    yield '```%s```' % completed_process.stdout
-                    return
-                elif len(completed_process.stdout) <= MAX_LENGTH_CARD:
-                    return self.send_card(
-                        in_reply_to=message,
-                        body=completed_process.stdout,
-                        color='green',
-                    )
-                else:  # Neither of the normal ways of sending messages works; we have to chunk the message
-                    message_chunks = chunks(completed_process.stdout, MAX_LENGTH_MESSAGE)
-                    yield 'Response broken down into %s chunks...' % len(message_chunks)
-
-                    for i, chunk in enumerate(message_chunks):
-                        yield 'Chunk %s/%s' % (i + 1, len(message_chunks))
-                        # We only have to do this because Errbot won't apply the graves if it does the splitting itself
-                        yield '```%s```' % chunk
-
-                    return
+                self.send_stream_request(
+                    message.frm,
+                    io.BytesIO(str.encode(completed_process.stdout)),
+                    name='resp.txt',
+                )
+                return self.send_card(
+                    in_reply_to=message,
+                    body='Your request appears to have worked. Check the snippet for more details.',
+                    color='green',
+                )
             except ValueError as exc:
-                exc_message = "Missing or invalid arguments provided to Errbot's send_card()"
+                exc_message = "Missing or invalid arguments provided to Errbot's send_card()."
                 exc_tuple = sys.exc_info()
         finally:
             if exc_message is not None:  # The task didn't work
@@ -115,22 +108,19 @@ class Fabric(BotPlugin):
                 )
                 self.send_card(
                     in_reply_to=message,
-                    body=exc_message,
+                    body=exc_message + ' Check the snippet for more details.',
                     color='red',
                 )
 
                 if hasattr(exception, 'stdout'):
-                    if len(exception.stdout) <= MAX_LENGTH_MESSAGE:
-                        yield '```%s```' % exception.stdout
-                    else:
-                        logger.error(
-                            exception.stdout,
-                        )
-                        self.send_card(
-                            in_reply_to=message,
-                            body='The error log is too long to display here; check on the server',
-                            color='red',
-                        )
+                    logger.error(
+                        exception.stdout,
+                    )
+                    return self.send_stream_request(
+                        message.frm,
+                        io.BytesIO(str.encode(exception.stdout)),
+                        name='exception.py',
+                    )
 
     @staticmethod
     def validate_task(task_name):
