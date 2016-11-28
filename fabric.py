@@ -89,7 +89,7 @@ class Fabric(BotPlugin):
                 self.send_stream_request(
                     message.frm,
                     io.BytesIO(str.encode(completed_process.stdout)),
-                    name='resp.txt',
+                    name='response-%s.txt' % host,
                 )
                 return self.send_card(
                     in_reply_to=message,
@@ -119,7 +119,7 @@ class Fabric(BotPlugin):
                     return self.send_stream_request(
                         message.frm,
                         io.BytesIO(str.encode(exception.stdout)),
-                        name='exception.py',
+                        name='exception-%s.py' % host,
                     )
 
     @staticmethod
