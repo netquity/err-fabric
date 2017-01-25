@@ -119,7 +119,7 @@ class Fabric(BotPlugin):
                     return self.send_stream_request(
                         message.frm,
                         io.BytesIO(str.encode(exception.stdout)),
-                        name='exception-%s.py' % host,
+                        name='exception-%s.txt' % host,
                     )
 
     @staticmethod
