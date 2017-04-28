@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 import json
-from errbot import BotPlugin, botcmd, arg_botcmd, utils
+from errbot import BotPlugin, botcmd, arg_botcmd, ValidationException
 
 FABFILE_PATH = os.getenv('FABFILE_PATH')
 FABRIC_PATH = os.getenv('FABRIC_PATH')
@@ -39,7 +39,7 @@ class Fabric(BotPlugin):
     def fab(self, message, host, tasks):
         try:
             Fabric.validate_whole_input(message.body)
-        except utils.ValidationException as exc:
+        except ValidationException as exc:
             failure_message = "Invalid input command; check that it doesn't contain any shell meta-characters"
             logger.exception(failure_message)
             return self.send_card(
@@ -51,7 +51,7 @@ class Fabric(BotPlugin):
         for task in Fabric.extract_task_names(tasks):
             try:
                 Fabric.validate_task(task)
-            except utils.ValidationException as exc:
+            except ValidationException as exc:
                 logger.exception('Invalid task: %s' % task)
                 return self.send_card(
                     in_reply_to=message,
@@ -126,7 +126,7 @@ class Fabric(BotPlugin):
     def validate_task(task_name):
         """Confirm that the given task is allowed"""
         if task_name not in ALLOWED_TASKS:
-            raise utils.ValidationException(
+            raise ValidationException(
                 'Task %s is not one of the ALLOWED_TASKS. No tasks have been executed.' % task_name,
             )
 
@@ -146,7 +146,7 @@ class Fabric(BotPlugin):
 
         for meta_char in META_CHARS:
             if meta_char in input_string:
-                raise utils.ValidationException(
+                raise ValidationException(
                     "Illegal character=%s. "
                     "Shell meta-characters and Fabric's arbitrary remote shell command '--' not allowed."
                     % meta_char
