@@ -10,7 +10,7 @@ from errbot import BotPlugin, botcmd, arg_botcmd, ValidationException
 
 FABFILE_PATH = os.getenv('FABFILE_PATH')
 FABRIC_PATH = os.getenv('FABRIC_PATH')
-PYTHON2_PATH = os.getenv('PYTHON2_PATH')
+PYTHON3_PATH = os.getenv('PYTHON3_PATH')
 
 ALLOWED_TASKS = os.getenv('ALLOWED_TASKS').split()
 HOSTNAMES = os.getenv('HOSTNAMES').split()
@@ -69,7 +69,7 @@ class Fabric(BotPlugin):
                 tasks,
             )
         except OSError as exc:
-            exc_message = 'Bad file path: either the Python2 or Fabric binary, or fabfile itself.'
+            exc_message = 'Bad file path: either the Python3 or Fabric binary, or fabfile itself.'
             exc_tuple = sys.exc_info()
         except ValueError as exc:
             exc_message = 'A bad argument was provided to Popen.'
@@ -162,7 +162,7 @@ class Fabric(BotPlugin):
         # TODO: add support for providing input data from team files
         return subprocess.run(
             [
-                PYTHON2_PATH,
+                PYTHON3_PATH,
                 FABRIC_PATH,
                 '--abort-on-prompts',
                 '--hosts=%s' % host,
