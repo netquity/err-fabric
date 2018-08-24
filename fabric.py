@@ -5,8 +5,7 @@ import os
 import subprocess
 import sys
 
-import json
-from errbot import BotPlugin, botcmd, arg_botcmd, ValidationException
+from errbot import BotPlugin, arg_botcmd, ValidationException
 
 FABFILE_PATH = os.getenv('FABFILE_PATH')
 FABRIC_PATH = os.getenv('FABRIC_PATH')
