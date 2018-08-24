@@ -163,7 +163,6 @@ class Fabric(BotPlugin):
             [
                 PYTHON3_PATH,
                 FABRIC_PATH,
-                '--abort-on-prompts',
                 '--hosts=%s' % host,
                 '--fabfile=%s' % FABFILE_PATH,
                 *tasks,
