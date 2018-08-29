@@ -21,8 +21,8 @@ files](http://docs.fabfile.org/en/latest/usage/execution.html#leveraging-native-
 In your environment, define all required variables:
 
 ```
-# Path to the Python 2 binary
-export PYTHON3_PATH="${APP_DIR}/env3/bin/python2.7"
+# Path to the Python 3 binary
+export PYTHON3_PATH="${APP_DIR}/env3/bin/python3.7"
 # Path to the Fabric binary
 export FABRIC_PATH="${APP_DIR}/env3/bin/fab"
 # Path to where your fabfile is
