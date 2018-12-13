@@ -129,20 +129,28 @@ class Fabric(BotPlugin):
         """Receive a list of tasks, possibly containing arguments, and return only task names"""
         task_names = []
         for task in tasks:
-            task_names.append(task.split(':')[0])
+            if task.startswith('--'):
+                task_names.append(task.split('=')[0])
+            else:
+                task_names.append(task.split(':')[0])
 
         return task_names
 
     @staticmethod
     def validate_whole_input(input_string):
         """Make sure that no shell meta-characters are anywhere in the input"""
-        META_CHARS = list(';|`$()&<>') + ['--']  # Include `--` to prevent Arbitrary remote shell commands
-
+        META_CHARS = list(';|`$()&<>')
+        if '--' in input_string.split():
+            raise ValidationException(
+                "Illegal command=%s. "
+                "Fabric's arbitrary remote shell command '--' not allowed."
+                % '--'
+            )
         for meta_char in META_CHARS:
             if meta_char in input_string:
                 raise ValidationException(
                     "Illegal character=%s. "
-                    "Shell meta-characters and Fabric's arbitrary remote shell command '--' not allowed."
+                    "Shell meta-characters not allowed."
                     % meta_char
                 )
 
