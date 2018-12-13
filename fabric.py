@@ -167,6 +167,7 @@ class Fabric(BotPlugin):
                 PYTHON3_PATH,
                 FABRIC_PATH,
                 '--hosts=%s' % host,
+                '--ssh-config=%s/ssh_config' % FABFILE_PATH,
                 '--search-root=%s' % FABFILE_PATH,
                 *tasks,
             ],
