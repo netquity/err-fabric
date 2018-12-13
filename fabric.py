@@ -52,14 +52,13 @@ class Fabric(BotPlugin):
             try:
                 Fabric.validate_task(task)
             except ValidationException as exc:
-                logger.exception('Invalid task: %s' % task)
                 return self.send_card(
                     in_reply_to=message,
                     fields=(('Invalid Task', task),),
                     color='red',
                 )
 
-        yield 'Your message is now processing...'
+        self._bot.add_reaction(message, "hourglass")
 
         exc_message = None
         exc_tuple = None
@@ -85,22 +84,18 @@ class Fabric(BotPlugin):
             exc_message = 'An ambiguous error occurred while calling Subprocess.'
             exc_tuple = sys.exc_info()
         else:
-            try:
-                self.send_stream_request(
-                    message.frm,
-                    io.BytesIO(str.encode(completed_process.stdout)),
-                    name='response-%s.txt' % host,
-                )
-                return self.send_card(
-                    in_reply_to=message,
-                    body='Your request appears to have worked. Check the snippet for more details.',
-                    color='green',
-                )
-            except ValueError as exc:
-                exc_message = "Missing or invalid arguments provided to Errbot's send_card()."
-                exc_tuple = sys.exc_info()
+            self._bot.remove_reaction(message, "hourglass")
+            self._bot.add_reaction(message, "white_check_mark")
+            self.send_stream_request(
+                message.frm,
+                io.BytesIO(str.encode(completed_process.stdout)),
+                name='response-%s.txt' % host,
+            )
+            return
         finally:
             if exc_message is not None:  # The task didn't work
+                self._bot.remove_reaction(message, "hourglass")
+                self._bot.add_reaction(message, "x")
                 exception = exc_tuple[1]
                 logger.exception(
                     exc_message,
