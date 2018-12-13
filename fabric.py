@@ -5,12 +5,11 @@ import os
 import subprocess
 import sys
 
-import json
-from errbot import BotPlugin, botcmd, arg_botcmd, utils
+from errbot import BotPlugin, arg_botcmd, ValidationException
 
 FABFILE_PATH = os.getenv('FABFILE_PATH')
 FABRIC_PATH = os.getenv('FABRIC_PATH')
-PYTHON2_PATH = os.getenv('PYTHON2_PATH')
+PYTHON3_PATH = os.getenv('PYTHON3_PATH')
 
 ALLOWED_TASKS = os.getenv('ALLOWED_TASKS').split()
 HOSTNAMES = os.getenv('HOSTNAMES').split()
@@ -39,7 +38,7 @@ class Fabric(BotPlugin):
     def fab(self, message, host, tasks):
         try:
             Fabric.validate_whole_input(message.body)
-        except utils.ValidationException as exc:
+        except ValidationException as exc:
             failure_message = "Invalid input command; check that it doesn't contain any shell meta-characters"
             logger.exception(failure_message)
             return self.send_card(
@@ -51,15 +50,14 @@ class Fabric(BotPlugin):
         for task in Fabric.extract_task_names(tasks):
             try:
                 Fabric.validate_task(task)
-            except utils.ValidationException as exc:
-                logger.exception('Invalid task: %s' % task)
+            except ValidationException as exc:
                 return self.send_card(
                     in_reply_to=message,
                     fields=(('Invalid Task', task),),
                     color='red',
                 )
 
-        yield 'Your message is now processing...'
+        self._bot.add_reaction(message, "hourglass")
 
         exc_message = None
         exc_tuple = None
@@ -69,7 +67,7 @@ class Fabric(BotPlugin):
                 tasks,
             )
         except OSError as exc:
-            exc_message = 'Bad file path: either the Python2 or Fabric binary, or fabfile itself.'
+            exc_message = 'Bad file path: either the Python3 or Fabric binary, or fabfile itself.'
             exc_tuple = sys.exc_info()
         except ValueError as exc:
             exc_message = 'A bad argument was provided to Popen.'
@@ -85,22 +83,18 @@ class Fabric(BotPlugin):
             exc_message = 'An ambiguous error occurred while calling Subprocess.'
             exc_tuple = sys.exc_info()
         else:
-            try:
-                self.send_stream_request(
-                    message.frm,
-                    io.BytesIO(str.encode(completed_process.stdout)),
-                    name='response-%s.txt' % host,
-                )
-                return self.send_card(
-                    in_reply_to=message,
-                    body='Your request appears to have worked. Check the snippet for more details.',
-                    color='green',
-                )
-            except ValueError as exc:
-                exc_message = "Missing or invalid arguments provided to Errbot's send_card()."
-                exc_tuple = sys.exc_info()
+            self._bot.remove_reaction(message, "hourglass")
+            self._bot.add_reaction(message, "white_check_mark")
+            self.send_stream_request(
+                message.frm,
+                io.BytesIO(str.encode(completed_process.stdout)),
+                name='response-%s.txt' % host,
+            )
+            return
         finally:
             if exc_message is not None:  # The task didn't work
+                self._bot.remove_reaction(message, "hourglass")
+                self._bot.add_reaction(message, "x")
                 exception = exc_tuple[1]
                 logger.exception(
                     exc_message,
@@ -126,7 +120,7 @@ class Fabric(BotPlugin):
     def validate_task(task_name):
         """Confirm that the given task is allowed"""
         if task_name not in ALLOWED_TASKS:
-            raise utils.ValidationException(
+            raise ValidationException(
                 'Task %s is not one of the ALLOWED_TASKS. No tasks have been executed.' % task_name,
             )
 
@@ -135,20 +129,28 @@ class Fabric(BotPlugin):
         """Receive a list of tasks, possibly containing arguments, and return only task names"""
         task_names = []
         for task in tasks:
-            task_names.append(task.split(':')[0])
+            if task.startswith('--'):
+                task_names.append(task.split('=')[0])
+            else:
+                task_names.append(task.split(':')[0])
 
         return task_names
 
     @staticmethod
     def validate_whole_input(input_string):
         """Make sure that no shell meta-characters are anywhere in the input"""
-        META_CHARS = list(';|`$()&<>') + ['--']  # Include `--` to prevent Arbitrary remote shell commands
-
+        META_CHARS = list(';|`$()&<>')
+        if '--' in input_string.split():
+            raise ValidationException(
+                "Illegal command=%s. "
+                "Fabric's arbitrary remote shell command '--' not allowed."
+                % '--'
+            )
         for meta_char in META_CHARS:
             if meta_char in input_string:
-                raise utils.ValidationException(
+                raise ValidationException(
                     "Illegal character=%s. "
-                    "Shell meta-characters and Fabric's arbitrary remote shell command '--' not allowed."
+                    "Shell meta-characters not allowed."
                     % meta_char
                 )
 
@@ -162,11 +164,11 @@ class Fabric(BotPlugin):
         # TODO: add support for providing input data from team files
         return subprocess.run(
             [
-                PYTHON2_PATH,
+                PYTHON3_PATH,
                 FABRIC_PATH,
-                '--abort-on-prompts',
                 '--hosts=%s' % host,
-                '--fabfile=%s' % FABFILE_PATH,
+                '--ssh-config=%s/ssh_config' % FABFILE_PATH,
+                '--search-root=%s' % FABFILE_PATH,
                 *tasks,
             ],
             stdout=subprocess.PIPE,

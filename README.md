@@ -16,17 +16,15 @@ You must provide your own fabfile. For an overview on how to use Fabric, see the
 You must also provide your own SSH config file. See [Leveraging native SSH config
 files](http://docs.fabfile.org/en/latest/usage/execution.html#leveraging-native-ssh-config-files) for details. Don't forget to make sure that your bot server is authorized access to each of the hosts you define. The `HOSTNAMES` variable shown below should reference hosts defined in your SSH config.
 
-Make sure Python 2 is installed somewhere on your system, as Fabric is not yet compatible with Python 3.
-
 ### Example configuration
 
 In your environment, define all required variables:
 
 ```
-# Path to the Python 2 binary
-export PYTHON2_PATH="${APP_DIR}/env2/bin/python2.7"
+# Path to the Python 3 binary
+export PYTHON3_PATH="${APP_DIR}/env3/bin/python3.7"
 # Path to the Fabric binary
-export FABRIC_PATH="${APP_DIR}/env2/bin/fab"
+export FABRIC_PATH="${APP_DIR}/env3/bin/fab"
 # Path to where your fabfile is
 export FABFILE_PATH='/home/web/fabfile/'
 
