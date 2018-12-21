@@ -9,7 +9,7 @@ from errbot import BotPlugin, arg_botcmd, ValidationException
 
 FABFILE_PATH = os.getenv('FABFILE_PATH')
 FABRIC_PATH = os.getenv('FABRIC_PATH')
-PYTHON3_PATH = os.getenv('PYTHON3_PATH')
+PYTHON_PATH = os.getenv('PYTHON_PATH')
 
 ALLOWED_TASKS = os.getenv('ALLOWED_TASKS').split()
 HOSTNAMES = os.getenv('HOSTNAMES').split()
@@ -164,7 +164,7 @@ class Fabric(BotPlugin):
         # TODO: add support for providing input data from team files
         return subprocess.run(
             [
-                PYTHON3_PATH,
+                PYTHON_PATH,
                 FABRIC_PATH,
                 '--hosts=%s' % host,
                 '--ssh-config=%s/ssh_config' % FABFILE_PATH,
